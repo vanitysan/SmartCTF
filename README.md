@@ -1,4 +1,9 @@
 # SmartCTF 4J
+<img width="1915" height="1079" alt="Screenshot 2026-10-18 192008" src="https://github.com/user-attachments/assets/42474b2c-e53c-43bd-bedf-633878ed7180" />
+<img width="1919" height="1079" alt="Screenshot 2026-10-18 192308" src="https://github.com/user-attachments/assets/fb1dfc8d-a989-4121-976c-2172157db124" />
+<img width="1862" height="880" alt="Screenshot 2026-10-18 192116" src="https://github.com/user-attachments/assets/85b063e4-4dcc-42d9-9fdd-873fe11dec5d" />
+
+
 
 SmartCTF changes CTF scoring and adds team-oriented statistics, messages and HUD features. This version targets **Unreal Tournament 99, patch 469f**, with two-team CTF and compatible four-team CTF games and maps.
 
