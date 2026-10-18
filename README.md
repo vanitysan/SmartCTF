@@ -15,19 +15,17 @@ The `.int` file supplies the mutator's menu entry. Four-team play additionally r
 
 The main configuration has three sections: `SmartCTF`, `SmartCTFMultiConfig` and `SmartCTFSpreeConfig`. Restart the server after editing it. `mutate smartctf apply` validates already loaded settings; it does not reload the file from disk. Array entries use square brackets, for example `Texts[0]`.
 
-## Changes from 4H to 4J
+## Changes since 4H
 
 ### Scoreboard and server information
 
 - F1 and F2 use SmartCTF's interfaces whenever the mod is active. There is no option to switch back to the stock interfaces.
 - The layout retains the original visual style, team headers, fonts, transparent faces and trophy, while adapting to client resolution and two or four teams.
-- Player images are fitted proportionally, including skins with larger source textures. A flag carrier displays the green flag icon instead of a face.
+- Player images are fitted proportionally, including skins with larger source textures.
 - Player names have a fixed column based on approximately 15 characters. TM and EFF occupy aligned columns; long names are shortened when space is limited.
 - Statistic bars reserve room for at least five digits. Their color moves from white toward green according to the player's share of the highest value; the leading value is fully green.
 - Only actual spectators appear in the spectator list. Players waiting for match start remain in the team lists.
-- The footer displays the client's local clock, separate time and map/server lines, and the original author credits. The briefly displayed SmartCTF logo uses the updated artwork.
 - F2 has 16 record categories, paginated when necessary. Labels precede a fixed, right-aligned number column sized for seven digits, followed by Who, Where and When.
-- IP-to-Country integration is retained through an external resolver. Country flags fit proportionally below the face, with consistent spacing before Ping/PL.
 
 ### Scoring and detection
 
@@ -254,9 +252,9 @@ MostPoints=(Count=162,PlayerName="Player",MapName="Facing Worlds",RecordDate="18
 - v4D: [es]Rush — 2006/01
 - v4D++: adminthis — 2008/10
 - v4E: adminthis, The_Cowboy & Sp0ngeb0b — 2009/12
-- v4G: vanitysan aka [s§s]HanNibaL — 2025/02
-- v4H: vanitysan aka [s§s]HanNibaL — 2025/08
-- v4I: vanitysan aka [s§s]HanNibaL — 2026/05
-- v4J: vanitysan aka [s§s]HanNibaL — 2026/10
+- v4G: vanitysan aka HanNibaL — 2025/02
+- v4H: vanitysan aka HanNibaL — 2025/08
+- v4I: vanitysan aka HanNibaL — 2026/05
+- v4J: vanitysan aka HanNibaL — 2026/10
 
 Contact: vanitysan on Discord @ OldUnreal.
