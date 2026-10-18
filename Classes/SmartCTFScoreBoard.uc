@@ -10,6 +10,25 @@ static function bool IsRealSpectator(PlayerReplicationInfo PRI)
     return PRI!=None && PRI.bIsSpectator && !PRI.bWaitingPlayer;
 }
 
+static function string SpectatorNames(GameReplicationInfo G)
+{
+    local int I;
+    local string Names;
+    local PlayerReplicationInfo PRI;
+    if (G==None) return "";
+    // Remote spectator pawns need not exist on this client; use the public PRI list.
+    for (I=0; I<ArrayCount(G.PRIArray); I++)
+    {
+        PRI=G.PRIArray[I];
+        if (IsRealSpectator(PRI) && !PRI.bDeleteMe && PRI.PlayerName!="")
+        {
+            if (Names!="") Names=Names$", ";
+            Names=Names$PRI.PlayerName;
+        }
+    }
+    return Names;
+}
+
 function Gather()
 {
     local PlayerReplicationInfo PRI, Temp;
@@ -43,7 +62,6 @@ function ShowScores(Canvas C)
     local int I,Rows;
     local float X,Y,W,H,Gap,FootH,TeamH,Line;
     local string Clock,Specs;
-    local PlayerReplicationInfo PRI;
     local GameReplicationInfo G;
     local color FooterColor;
     if (Controller==None)
@@ -66,9 +84,7 @@ function ShowScores(Canvas C)
     Y=C.ClipY-FootH;
     if (S.bShowSpectators)
     {
-        foreach AllActors(class'PlayerReplicationInfo',PRI)
-            if (IsRealSpectator(PRI) && PRI.PlayerName!="" && Pawn(PRI.Owner)!=None && Pawn(PRI.Owner).bIsPlayer)
-            { if (Specs!="") Specs=Specs$", "; Specs=Specs$PRI.PlayerName; }
+        Specs=SpectatorNames(G);
         U.CenterText(C,"Spectators: " $ Specs,0,Y,C.ClipX,Line,S.TextColor);
     }
     FooterColor.R=255; FooterColor.G=255;
