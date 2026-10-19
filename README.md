@@ -27,7 +27,7 @@ Records are now saved in **`SmartCTF_Records.ini`**
 ## Installation
 
 1. Stop the server and back up your current configuration and records.
-2. Copy `SmartCTF_4K.u`, `SmartCTF_4K.int` and `SmartCTF_4K.ini` from `Dist/System` into the server’s `System` folder. Keep your own settings if you are updating an existing installation.
+2. Copy `SmartCTF_4K.u`, `SmartCTF_4K.int` and `SmartCTF_4K.ini` into the server’s `System` folder. Keep your own settings if you are updating an existing installation.
 3. Add the following entries to the existing `[Engine.GameEngine]` section in the server configuration:
 
    ```ini
