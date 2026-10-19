@@ -1,0 +1,1 @@
+class SmartCTFHUDMultiMessage extends SmartCTFHUDMessage;
