@@ -25,8 +25,6 @@ replication
         CountryPrefix,PlayerInfo,Captures,Assists,Grabs,Returns,FlagKills,Covers,Seals,DefKills,
         Frags,HeadShots,DamageDealt,ShieldBelts,Amps,
         BestSpree,CarrierSeconds,SessionStart;
-    reliable if (Role==ROLE_Authority && bNetOwner)
-        ClientNotice;
 }
 
 function Destroyed()
@@ -112,17 +110,6 @@ function PostBeginPlay()
 {
     Super.PostBeginPlay();
     if (Role == ROLE_Authority) SetTimer(2,True);
-}
-
-simulated function ClientNotice(byte Category, int Index, string PlayerName, string VictimName, string WeaponName, int Count, bool OwnSound)
-{
-    local SmartCTF S;
-    foreach AllActors(class'SmartCTF',S)
-    {
-        if (S.LocalPlayer==None || S.LocalPlayer.PlayerReplicationInfo!=PlayerInfo) return;
-        S.AddNotice(Category,Index,PlayerName,VictimName,WeaponName,Count,OwnSound);
-        break;
-    }
 }
 
 simulated function int Value(int I)

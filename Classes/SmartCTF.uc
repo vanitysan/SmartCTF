@@ -225,17 +225,12 @@ function ClearRun(byte FlagTeam)
 
 function NoticeTo(Pawn P, byte Category, int Index, PlayerReplicationInfo A, optional PlayerReplicationInfo B, optional string WeaponName, optional int Count)
 {
-    local SmartCTFPlayerReplicationInfo S;
-    local string AN, BN;
     local bool OwnSound;
-    if (PlayerPawn(P)==None) return;
-    S=EnsureStats(P);
-    if (S==None) return;
-    if (A!=None) AN=A.PlayerName;
-    if (B!=None) BN=B.PlayerName;
+    if (PlayerPawn(P)==None || (Category!=0 && Category!=2) || Index<0 || Index>=9 || (Category==2 && Index>=6)) return;
     OwnSound=(A!=None && A==P.PlayerReplicationInfo);
     if (Category==0 && Index>=7) OwnSound=(B!=None && B==P.PlayerReplicationInfo);
-    S.ClientNotice(Category,Index,AN,BN,WeaponName,Count,OwnSound);
+    PlayerPawn(P).ReceiveLocalizedMessage(class'SmartCTFNoticeMsg',
+        class'SmartCTFNoticeMsg'.static.Pack(Category,Index,Count,OwnSound),A,B);
 }
 
 function NotifyAll(byte Category, int Index, PlayerReplicationInfo A, optional PlayerReplicationInfo B, optional int Count)
