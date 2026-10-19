@@ -1,4 +1,4 @@
-class SmartCTFProfileConfig extends Object config(SmartCTF_4J);
+class SmartCTFProfileConfig extends Object config(SmartCTF_4K);
 
 var config bool bEnabled, bAnimateColor, bRainbow;
 var config color BaseColor, SecondColor;

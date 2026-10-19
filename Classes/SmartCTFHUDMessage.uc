@@ -30,9 +30,8 @@ static function int GetFontSize(int Switch)
     return 1;
 }
 
-// Native ChallengeHUD caches a special message's color at insertion and supplies fading.
-// Normal death messages render their profile color continuously through RenderComplexMessage.
-static function Configure(SmartCTFMessageProfile P,byte Category)
+// The native HUD owns message expiry; the mutator draws the animated color.
+static function Configure(SmartCTFMessageProfile P)
 {
     Default.DrawColor=P.BaseColor;
     Default.Lifetime=Clamp(int(P.Duration+0.5),1,15);

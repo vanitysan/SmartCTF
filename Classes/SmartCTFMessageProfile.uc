@@ -5,14 +5,14 @@ var color BaseColor, SecondColor;
 var float Duration, ColorSpeed;
 var string Texts[9];
 var string SoundNames[9];
-var byte Category, EntryCount;
+var byte EntryCount;
 var class<SmartCTFProfileConfig> ConfigClass;
 
 replication
 {
     reliable if (Role == ROLE_Authority)
         bEnabled,bAnimateColor,bRainbow,BaseColor,SecondColor,
-        Duration,ColorSpeed,Texts,SoundNames,Category,EntryCount;
+        Duration,ColorSpeed,Texts,SoundNames,EntryCount;
 }
 
 simulated function color AnimatedColor(float T)

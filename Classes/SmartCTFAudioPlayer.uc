@@ -2,11 +2,13 @@ class SmartCTFAudioPlayer extends Info;
 var sound LastEffect;
 var int PlayedCount;
 
-simulated function PlayEffect(sound Effect,float Volume)
+simulated function PlayEffect(sound Effect)
 {
-    if (Effect==None || Volume<=0) return;
+    local PlayerPawn P;
+    P=PlayerPawn(Owner);
+    if (Effect==None || P==None) return;
     LastEffect=Effect; PlayedCount++;
-    PlaySound(Effect,SLOT_Interface,FClamp(Volume,0,4),True);
+    P.ClientPlaySound(Effect,,True);
 }
 
 defaultproperties

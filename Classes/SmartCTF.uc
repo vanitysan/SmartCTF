@@ -7,11 +7,12 @@
 // v4B/C    - {DnF2}SiNiSTeR                        (2005/03)
 // v4D      - [es]Rush                              (2006/01)
 // v4D++    - adminthis                             (2008/10)
-// v4E      - adminthis, The_Cowboy & Sp0ngeb0b       (2009/12)
-// v4G      - vanitysan aka [s§s]HanNibaL            (2025/02)
-// v4H      - vanitysan aka [s§s]HanNibaL            (2025/08)
-// v4I      - vanitysan aka [s§s]HanNibaL            (2026/05)
-// v4J      - vanitysan aka [s§s]HanNibaL            (2026/10)
+// v4E      - adminthis, The_Cowboy & Sp0ngeb0b     (2009/12)
+// v4G      - vanitysan aka HanNibaL                (2025/02)
+// v4H      - vanitysan aka HanNibaL                (2025/08)
+// v4I      - vanitysan aka HanNibaL                (2026/05)
+// v4J      - vanitysan aka HanNibaL                (2026/10)
+// v4K      - vanitysan aka HanNibaL                (2026/10)
 //*************************************************************
 // Contact Info:
 // {PiN}Hai-Ping       http://forums.prounreal.com
@@ -24,9 +25,11 @@
 //*************************************************************
 // CHANGELOG: See Readme
 //*************************************************************
-class SmartCTF extends Mutator config(SmartCTF_4J);
+class SmartCTF extends Mutator config(SmartCTF_4K);
 
-var config bool bXmasSB, bXmasImages;
+#exec AUDIO IMPORT FILE="Sounds\start.wav" NAME="Start"
+
+var config bool bXmasSB;
 var config string bXmasStart, bXmasEnd;
 var config bool bPlayCaptureSound, bPlayAssistSound, bPlaySavedSound, bPlayLeadSound;
 var config bool bShowLongRangeMsg, bShowSpawnKillerGlobalMsg;
@@ -43,6 +46,20 @@ var config bool bShowDamage, bShowRecords;
 var config string RedFlag, BlueFlag, GreenFlag, YellowFlag, RedTeamHud, BlueTeamHud, GreenTeamHud, YellowTeamHud;
 var config float PageSeconds;
 var SmartCTFSettings Settings;
+var config bool bDoKeybind, bExtraMsg, bRestorePlayerStats;
+var config string LogoTexture, IntroSound;
+var config float LogoDrawDelay, LogoFadeInTime, LogoFadeOutTime, IntroSoundDelay;
+var config string CaptionLineOne, CaptionLineTwo, CaptionLineThree, CaptionLineFour;
+var config bool bLogoTranslucent;
+var config float LogoDrawTime;
+var config string Position, Size;
+var bool bDefaultInterfaces, bKeybindDone, bJoinPresentationDone;
+var float JoinPresentationTime;
+var texture SplashTexture;
+var sound SplashSound;
+var bool bIntroSoundPlayed;
+var SmartCTFReconnect Reconnect;
+
 var SmartCTFRecords Records;
 var CTFFlag Flags[4];
 var vector Bases[4];
@@ -52,7 +69,7 @@ var byte ContributorFlag[256];
 var byte LastHome[4];
 var PlayerReplicationInfo LastCarrier[4];
 var float LastStep;
-var bool bStarted, bEndSaved;
+var bool bEndSaved;
 var float MatchSeconds;
 var SmartCTFEndNotifier EndNotifier;
 var PlayerPawn LocalPlayer;
@@ -65,7 +82,6 @@ var class<ScoreBoard> PreviousScoringType;
 var SmartCTFVisualFlag VisualFlags[4];
 var SmartCTFUI UI;
 var SmartCTFAudioPlayer AudioPlayer;
-var int LastVisualRevision;
 var bool bLogoStarted;
 var float LogoStartTime;
 
@@ -91,7 +107,7 @@ function PreBeginPlay()
     if (!bEnabled || CTFGame(Level.Game) == None) { Destroy(); return; }
     for (M=Level.Game.BaseMutator; M!=None; M=M.NextMutator)
         if (M!=Self && M.Class==Class) { Destroy(); return; }
-    Level.Game.ScoreBoardType = class'SmartCTFScoreBoard';
+
 }
 
 function PostBeginPlay()
@@ -115,15 +131,16 @@ function PostBeginPlay()
             case 1: P=None; break;
             case 2: P=Spawn(class'SmartCTFMultiProfile'); break;
         }
-        if (P != None) { P.Category=I; Settings.Profiles[I]=P; }
+        if (P != None) Settings.Profiles[I]=P;
     }
     Level.Game.RegisterMessageMutator(Self);
     Level.Game.DeathMessageClass=class'SmartCTFDeathMessage';
     Level.Game.RegisterDamageMutator(Self);
+    if (bRestorePlayerStats) { Reconnect=Spawn(class'SmartCTFReconnect'); if (Reconnect!=None) Reconnect.Controller=Self; }
     DiscoverFlags();
     LastStep=Level.TimeSeconds;
     SetTimer(0.25,True);
-    Log("SmartCTF 4J initialized. Smart scoreboards and F2 are mandatory.",'SmartCTF');
+    LogStartup();
 }
 
 function DiscoverFlags()
@@ -138,7 +155,7 @@ function DiscoverFlags()
             if (F.HomeBase!=None) { Bases[F.Team]=F.HomeBase.Location; HasBase[F.Team]=1; }
             N=Max(N,int(F.Team)+1);
         }
-    if (Settings.TeamCount==4 || N>2) Settings.ActiveTeams=4;
+    if (N>2) Settings.ActiveTeams=4;
     else Settings.ActiveTeams=2;
 }
 
@@ -163,6 +180,7 @@ function SmartCTFPlayerReplicationInfo EnsureStats(Pawn P)
         {
             S.PlayerInfo=P.PlayerReplicationInfo;
             S.SessionStart=int(MatchSeconds);
+            if (Reconnect!=None) Reconnect.Register(P,S);
         }
     }
     return S;
@@ -207,14 +225,12 @@ function ClearRun(byte FlagTeam)
 
 function NoticeTo(Pawn P, byte Category, int Index, PlayerReplicationInfo A, optional PlayerReplicationInfo B, optional string WeaponName, optional int Count)
 {
-    local SmartCTFPlayerReplicationInfo S;
-    local string AN, BN;
-    if (PlayerPawn(P)==None) return;
-    S=EnsureStats(P);
-    if (S==None) return;
-    if (A!=None) AN=A.PlayerName;
-    if (B!=None) BN=B.PlayerName;
-    S.ClientNotice(Category,Index,AN,BN,WeaponName,Count);
+    local bool OwnSound;
+    if (PlayerPawn(P)==None || (Category!=0 && Category!=2) || Index<0 || Index>=9 || (Category==2 && Index>=6)) return;
+    OwnSound=(A!=None && A==P.PlayerReplicationInfo);
+    if (Category==0 && Index>=7) OwnSound=(B!=None && B==P.PlayerReplicationInfo);
+    PlayerPawn(P).ReceiveLocalizedMessage(class'SmartCTFNoticeMsg',
+        class'SmartCTFNoticeMsg'.static.Pack(Category,Index,Count,OwnSound),A,B);
 }
 
 function NotifyAll(byte Category, int Index, PlayerReplicationInfo A, optional PlayerReplicationInfo B, optional int Count)
@@ -440,16 +456,12 @@ function bool PreventDeath(Pawn Victim, Pawn Killer, name DamageType, vector Hit
             else NotifyAll(0,8,VP,VP,OldSpree);
         }
     }
-    if (Killer==None || Killer==Victim)
-    {
-        if (V!=None) V.Suicides++;
-        return False;
-    }
+    if (Killer==None || Killer==Victim) return False;
     KP=Killer.PlayerReplicationInfo;
     if (KP==None || KP.Team>=4 || VP.Team>=4) return False;
     K=EnsureStats(Killer);
     if (K==None) return False;
-    if (KP.Team==VP.Team) { K.TeamKills++; return False; }
+    if (KP.Team==VP.Team) return False;
     K.Frags++; K.FragSpree++; K.BestSpree=Max(K.BestSpree,K.FragSpree);
     if (DamageType=='Decapitated') K.HeadShots++;
     if (Level.TimeSeconds-K.LastKillTime<=MultiKillWindow) K.MultiLevel++;
@@ -505,7 +517,6 @@ function bool PreventDeath(Pawn Victim, Pawn Killer, name DamageType, vector Hit
     }
     if (bSpawnkillDetection && V!=None && V.bSpawnProtected && Level.TimeSeconds-V.SpawnTime<=SpawnProtectionSeconds && DamageType!='Gibbed')
     {
-        K.SpawnKills++;
         if (bSmartScoring) KP.Score-=SpawnKillPenalty;
         Killer.ReceiveLocalizedMessage(class'SmartCTFCoolMsg',5,KP,VP);
         K.SpawnKillSpree++;
@@ -529,8 +540,6 @@ function MutatorTakeDamage(out int ActualDamage, Pawn Victim, Pawn InstigatedBy,
     if (Victim.PlayerReplicationInfo.Team==InstigatedBy.PlayerReplicationInfo.Team) return;
     S=EnsureStats(InstigatedBy);
     if (S!=None) S.DamageDealt+=Min(ActualDamage,Max(0,Victim.Health));
-    S=EnsureStats(Victim);
-    if (S!=None) S.DamageTaken+=Min(ActualDamage,Max(0,Victim.Health));
 }
 
 function bool HandlePickupQuery(Pawn Other, Inventory Item, out byte bAllowPickup)
@@ -615,12 +624,6 @@ function Timer()
         }
 }
 
-function bool HandleEndGame()
-{
-    // UT calls this before deciding whether overtime is needed. Do not commit yet.
-    return Super.HandleEndGame();
-}
-
 function SaveEndRecords()
 {
     if (Records!=None && Settings!=None && !bEndSaved)
@@ -641,13 +644,13 @@ function Mutate(string Command, PlayerPawn Sender)
             if (Sender.PlayerReplicationInfo.bAdmin || Level.NetMode==NM_Standalone)
             {
                 Settings.ValidateSettings();
-                Sender.ClientMessage("SmartCTF 4J active settings validated. INI file edits require a server restart.");
+                Sender.ClientMessage("SmartCTF 4K active settings validated. INI file edits require a server restart.");
             }
             else Sender.ClientMessage("Administrator login required.");
         }
-        else if (Caps(Command)=="SMARTCTF STATS" || Caps(Command)=="SMARTCTF SHOWSTATS" || Caps(Command)=="SMARTCTF FORCESTATS")
-            Sender.bShowScores=True;
-        else Sender.ClientMessage("SmartCTF 4J | F1: scores | F2: server and records | mutate smartctf apply (admin)");
+        else if (Caps(Command)=="SMARTCTF STATS" || Caps(Command)=="SMARTCTF SHOWSTATS" || Caps(Command)=="SMARTCTF FORCESTATS" || Caps(Command)=="SMARTCTF TOGGLE")
+            Sender.ReceiveLocalizedMessage(class'SmartCTFToggleMsg');
+        else Sender.ClientMessage("SmartCTF 4K | F1: scores | F2: server and records | mutate smartctf apply (admin)");
     }
     Super.Mutate(Command,Sender);
 }
@@ -657,7 +660,11 @@ simulated function Tick(float Delta)
     local PlayerPawn P;
     local ChallengeHUD H;
     local CTFFlag F;
-    if (Role==ROLE_Authority) ConfirmPickups();
+    if (Role==ROLE_Authority)
+    {
+        ConfirmPickups();
+        if (Reconnect!=None) Reconnect.UpdatePlayers();
+    }
     if (Level.NetMode==NM_DedicatedServer || Settings==None) return;
     if (LocalPlayer==None)
         foreach AllActors(class'PlayerPawn',P)
@@ -672,7 +679,16 @@ simulated function Tick(float Delta)
         PreviousScoringType=LocalPlayer.ScoringType;
         ClientBoard=Spawn(class'SmartCTFScoreBoard',LocalPlayer);
     }
-    if (ClientBoard!=None) { ClientBoard.Controller=Self; LocalPlayer.Scoring=ClientBoard; LocalPlayer.ScoringType=class'SmartCTFScoreBoard'; }
+    if (ClientBoard!=None)
+    {
+        ClientBoard.Controller=Self;
+        if (!bDefaultInterfaces) { LocalPlayer.Scoring=ClientBoard; LocalPlayer.ScoringType=class'SmartCTFScoreBoard'; }
+        else
+        {
+            if (LocalPlayer.Scoring!=None && LocalPlayer.Scoring!=ClientBoard) PreviousBoard=LocalPlayer.Scoring;
+            LocalPlayer.Scoring=PreviousBoard; LocalPlayer.ScoringType=PreviousScoringType;
+        }
+    }
     H=ChallengeHUD(LocalPlayer.MyHUD);
     if (H!=None)
     {
@@ -683,9 +699,19 @@ simulated function Tick(float Delta)
             ClientInfo=Spawn(class'SmartCTFServerInfo',LocalPlayer);
             RegisterHUDMutator();
         }
-        if (ClientInfo!=None) { ClientInfo.Controller=Self; H.ServerInfo=ClientInfo; }
+        if (ClientInfo!=None)
+        {
+            ClientInfo.Controller=Self;
+            if (bDefaultInterfaces)
+            {
+                if (H.ServerInfo!=None && H.ServerInfo!=ClientInfo) PreviousInfo=H.ServerInfo;
+                H.ServerInfo=PreviousInfo;
+            }
+            else H.ServerInfo=ClientInfo;
+        }
     }
     if (!bHUDMutator) RegisterHUDMutator();
+    SetupClientPresentation();
     if (UI==None) return;
     foreach AllActors(class'CTFFlag',F)
         if (F.Team<4)
@@ -699,7 +725,18 @@ simulated function Tick(float Delta)
         }
 }
 
-simulated function AddNotice(byte Category, int Index, string PlayerName, string VictimName, string WeaponName, int Count)
+static function string NoticeSoundPath(byte Category,int Index,bool OwnSound,string Configured)
+{
+    if (Category==0 && !OwnSound)
+    {
+        if (Index<7) return "Botpack.SpreeSound";
+        return "";
+    }
+    if (Category==2 && !OwnSound) return "";
+    return Configured;
+}
+
+simulated function AddNotice(byte Category, int Index, string PlayerName, string VictimName, string WeaponName, int Count, optional bool OwnSound)
 {
     local SmartCTFMessageProfile Profile;
     local string S;
@@ -721,18 +758,23 @@ simulated function AddNotice(byte Category, int Index, string PlayerName, string
         Data=new(None) class'SmartCTFNoticeData'; Data.Profile=Profile; Data.Text=S; Data.Category=Category; Data.Index=Index;
         MessageClass=class'SmartCTFHUDMessage';
         if (Category==2) MessageClass=class'SmartCTFHUDMultiMessage';
-        MessageClass.static.Configure(Profile,Category);
+        MessageClass.static.Configure(Profile);
         Slot=class'SmartCTFHUDMessage'.static.Register(Data);
         LocalPlayer.MyHUD.LocalizedMessage(MessageClass,Slot,None,None,Data);
     }
-    SoundPath=Profile.SoundNames[Index];
+    SoundPath=NoticeSoundPath(Category,Index,OwnSound,Profile.SoundNames[Index]);
+    if (Category==0 && Index<7 && !OwnSound)
+    {
+        LocalPlayer.PlaySound(sound'Botpack.SpreeSound',,4.0);
+        return;
+    }
     if (SoundPath!="")
     {
         Effect=sound(DynamicLoadObject(SoundPath,class'Sound',True));
         if (Effect!=None)
         {
             if (AudioPlayer==None) AudioPlayer=Spawn(class'SmartCTFAudioPlayer',LocalPlayer);
-            if (AudioPlayer!=None) AudioPlayer.PlayEffect(Effect,1);
+            if (AudioPlayer!=None) AudioPlayer.PlayEffect(Effect);
         }
         else Log("Cannot load message sound: "$SoundPath,'SmartCTF');
     }
@@ -759,9 +801,9 @@ simulated function DrawStartupLogo(Canvas C)
     C.SetPos(X,Y);
     C.DrawTile(texture'poweredModern',Size,Size,0,0,256,256);
     C.Font=UI.BodyFont;
-    C.StrLen("SmartCTF 4J",XL,YL);
+    C.StrLen("SmartCTF 4K",XL,YL);
     C.SetPos(X+(Size-XL)*0.5,Y+Size+8*UI.Scale);
-    C.DrawText("SmartCTF 4J",False);
+    C.DrawText("SmartCTF 4K",False);
 }
 
 simulated event PostRender(Canvas C)
@@ -770,8 +812,6 @@ simulated event PostRender(Canvas C)
     local SmartCTFNoticeData D;
     local ChallengeHUD H;
     local float XL,YL,Y;
-    local PlayerReplicationInfo PRI;
-    local string LocationText;
     if (UI!=None && Settings!=None && LocalPlayer!=None && !LocalPlayer.bShowScores)
     {
         UI.Begin(C);
@@ -791,20 +831,189 @@ simulated event PostRender(Canvas C)
             C.Style=1; C.DrawColor=D.Profile.AnimatedColor(Level.TimeSeconds);
             C.SetPos(FMax(0,(C.ClipX-XL)*0.5),Y); C.DrawText(D.Text,False);
         }
-        if (Settings.bShowCarrierLocation && LocalPlayer.PlayerReplicationInfo!=None && LocalPlayer.GameReplicationInfo!=None)
-            for (I=0; I<ArrayCount(LocalPlayer.GameReplicationInfo.PRIArray); I++)
-            {
-                PRI=LocalPlayer.GameReplicationInfo.PRIArray[I];
-                if (PRI==None || PRI.HasFlag==None || PRI.Team!=LocalPlayer.PlayerReplicationInfo.Team || PRI==LocalPlayer.PlayerReplicationInfo) continue;
-                LocationText=PRI.PlayerName;
-                if (PRI.PlayerLocation!=None) LocationText=LocationText@"-"@PRI.PlayerLocation.LocationName;
-                else if (PRI.PlayerZone!=None) LocationText=LocationText@"-"@PRI.PlayerZone.ZoneName;
-                UI.Text(C,LocationText,C.ClipX*0.58,C.ClipY*0.80,C.ClipX*0.39,14*UI.Scale,Settings.TeamColors[Min(PRI.Team,3)]);
-                break;
-            }
+        if (Settings.bShowCarrierLocation) DrawCarrierLocations(C,H);
+        DrawServerSplash(C);
         UI.Finish(C);
     }
     if (NextHUDMutator!=None) NextHUDMutator.PostRender(C);
+}
+
+
+static function string OnOff(bool Enabled)
+{
+    if (Enabled) return "ON";
+    return "OFF";
+}
+
+function LogStartup()
+{
+    Log("####################################################",'SmartCTF');
+    Log("#                    SmartCTF 4K                   #",'SmartCTF');
+    Log("#               LOADED SUCCESSFULLY                #",'SmartCTF');
+    Log("#--------------------------------------------------#",'SmartCTF');
+    LogStartupLine("https://github.com/vanitysan/SmartCTF");
+    Log("#--------------------------------------------------#",'SmartCTF');
+    LogStartupLine("SpreeMSG=" $ OnOff(Settings.Profiles[0]!=None && Settings.Profiles[0].bEnabled));
+    LogStartupLine("MultiMSG=" $ OnOff(Settings.Profiles[2]!=None && Settings.Profiles[2].bEnabled));
+    LogStartupLine("RestorePlayerStats=" $ OnOff(Reconnect!=None));
+    Log("####################################################",'SmartCTF');
+}
+
+function LogStartupLine(string Text)
+{
+    Text="# " $ Text;
+    while (Len(Text)<51) Text=Text $ " ";
+    Log(Text $ "#",'SmartCTF');
+}
+
+simulated function ToggleInterfaces()
+{
+    bDefaultInterfaces=!bDefaultInterfaces;
+}
+
+simulated function SetupClientPresentation()
+{
+    local string Binding;
+
+    if (JoinPresentationTime==0) { JoinPresentationTime=Level.TimeSeconds+1; return; }
+    if (Level.TimeSeconds<JoinPresentationTime) return;
+    if (!bKeybindDone)
+    {
+        bKeybindDone=True;
+        if (Settings.bDoKeybind)
+        {
+            Binding=LocalPlayer.ConsoleCommand("KEYBINDING F3");
+            if (InStr(Caps(Binding),"MUTATE SMARTCTF")==-1)
+                LocalPlayer.ConsoleCommand("SET INPUT F3 mutate smartctf toggle|"$Binding);
+        }
+        if (Settings.bExtraMsg)
+        {
+            if (Settings.bDoKeybind) LocalPlayer.ClientMessage("SmartCTF: F3 switches HUD between SmartCTF and Default.");
+            else LocalPlayer.ClientMessage("SmartCTF: use mutate smartctf toggle to switch HUD interfaces.");
+        }
+    }
+    if (!bJoinPresentationDone)
+    {
+        bJoinPresentationDone=True;
+        bIntroSoundPlayed=False;
+        SplashTexture=None; SplashSound=None;
+        if (Settings.LogoTexture!="")
+        {
+            SplashTexture=texture(DynamicLoadObject(Settings.LogoTexture,class'Texture',True));
+            if (SplashTexture==None) Log("Cannot load server splash texture: "$Settings.LogoTexture,'SmartCTF');
+        }
+        if (Settings.IntroSound!="")
+        {
+            SplashSound=sound(DynamicLoadObject(Settings.IntroSound,class'Sound',True));
+            if (SplashSound==None) Log("Cannot load server intro sound: "$Settings.IntroSound,'SmartCTF');
+        }
+        JoinPresentationTime=Level.TimeSeconds;
+    }
+    if (!bIntroSoundPlayed && Level.TimeSeconds-JoinPresentationTime>=Settings.IntroSoundDelay)
+    {
+        bIntroSoundPlayed=True;
+        if (SplashSound!=None) LocalPlayer.ClientReliablePlaySound(SplashSound);
+        SplashSound=None;
+    }
+}
+
+static function float SplashOpacity(float Age,float Delay,float FadeIn,float Hold,float FadeOut)
+{
+    Age-=FMax(0,Delay);
+    if (Age<0) return 0;
+    if (FadeIn>0 && Age<FadeIn) return Age/FadeIn;
+    Age-=FMax(0,FadeIn);
+    if (Age<FMax(0,Hold)) return 1;
+    Age-=FMax(0,Hold);
+    if (FadeOut>0 && Age<FadeOut) return 1-Age/FadeOut;
+    return 0;
+}
+
+simulated function string SplashCaption(int Index)
+{
+    switch(Index)
+    {
+        case 0:return Settings.CaptionLineOne;
+        case 1:return Settings.CaptionLineTwo;
+        case 2:return Settings.CaptionLineThree;
+        case 3:return Settings.CaptionLineFour;
+    }
+    return "";
+}
+
+simulated function DrawServerSplash(Canvas C)
+{
+    local float W,H,X,Y,Age,Opacity,XL,YL,Fit;
+    local int I;
+    local font PreviousFont;
+    local bool PreviousCenter;
+    local color PreviousColor;
+    local byte PreviousStyle;
+    local string Text;
+    if (!bJoinPresentationDone) return;
+    Age=Level.TimeSeconds-JoinPresentationTime;
+    Opacity=SplashOpacity(Age,Settings.LogoDrawDelay,Settings.LogoFadeInTime,Settings.LogoDrawTime,Settings.LogoFadeOutTime);
+    if (Opacity<=0) return;
+    PreviousFont=C.Font; PreviousCenter=C.bCenter;
+    PreviousColor=C.DrawColor; PreviousStyle=C.Style;
+    C.bCenter=False;
+    W=256; H=256;
+    if (SplashTexture!=None) { W=SplashTexture.USize; H=SplashTexture.VSize; }
+    Fit=class'SmartCTFSplashLayout'.static.ImageScale(Settings.Size,C.ClipX,C.ClipY,W,H);
+    W*=Fit; H*=Fit;
+    if (W>C.ClipX) { H*=C.ClipX/W; W=C.ClipX; }
+    if (SplashTexture==None) H=0;
+    X=class'SmartCTFSplashLayout'.static.Axis(Settings.Position,C.ClipX,W,False);
+    Y=class'SmartCTFSplashLayout'.static.Axis(Settings.Position,C.ClipY,H,True);
+    C.DrawColor.R=255*Opacity; C.DrawColor.G=255*Opacity; C.DrawColor.B=255*Opacity;
+    C.Style=1;
+    if (Settings.bLogoTranslucent || Opacity<1) C.Style=3;
+    if (SplashTexture!=None && W>0 && H>0)
+    {
+        C.SetPos(X,Y);
+        C.DrawTile(SplashTexture,W,H,0,0,SplashTexture.USize,SplashTexture.VSize);
+    }
+    C.Font=C.SmallFont;
+    C.DrawColor.R=225*Opacity; C.DrawColor.G=225*Opacity; C.DrawColor.B=225*Opacity;
+    C.Style=1; if (Opacity<1) C.Style=3;
+    for (I=0; I<4; I++)
+    {
+        Text=SplashCaption(I);
+        C.TextSize(Text,XL,YL);
+        C.SetPos(X+int(W*0.5-XL*0.5),Y+int(H)+10*(I+1));
+        C.DrawText(Text);
+    }
+    C.Font=PreviousFont; C.bCenter=PreviousCenter;
+    C.DrawColor=PreviousColor; C.Style=PreviousStyle;
+}
+
+simulated function DrawCarrierLocations(Canvas C,ChallengeHUD H)
+{
+    local int I,Team,Rows[4];
+    local PlayerReplicationInfo PRI;
+    local float X,Y,W,Spacing,Line,HUDScale;
+    local string Place;
+    if (H==None || H.bHideHUD || H.bHideTeamInfo || H.bShowInfo || LocalPlayer.bShowMenu
+        || LocalPlayer.GameReplicationInfo==None || LocalPlayer.PlayerReplicationInfo==None) return;
+    HUDScale=H.Scale;
+    Spacing=150; if (H.IsA('CTF4HUD')) Spacing=128;
+    Line=UI.StatHeight; W=FMin(C.ClipX*0.36,360*UI.Scale);
+    X=C.ClipX-W-6*UI.Scale;
+    for (I=0; I<ArrayCount(LocalPlayer.GameReplicationInfo.PRIArray); I++)
+    {
+        PRI=LocalPlayer.GameReplicationInfo.PRIArray[I];
+        if (PRI==None || PRI.HasFlag==None || PRI.Team>=4 || PRI==LocalPlayer.PlayerReplicationInfo
+            || PRI.Team!=LocalPlayer.PlayerReplicationInfo.Team) continue;
+        Team=PRI.Team;
+        Y=C.ClipY-(350+Spacing*Team)*HUDScale+64*HUDScale+4*UI.Scale+Rows[Team]*Line*2;
+        if (Y<0 || Y+Line*2>C.ClipY || (Rows[Team]+1)*Line*2>Spacing*HUDScale-68*HUDScale) continue;
+        Place="Unknown area";
+        if (PRI.PlayerLocation!=None && PRI.PlayerLocation.LocationName!="") Place=PRI.PlayerLocation.LocationName;
+        else if (PRI.PlayerZone!=None && PRI.PlayerZone.ZoneName!="") Place=PRI.PlayerZone.ZoneName;
+        UI.RightText(C,PRI.PlayerName,X,Y,W,Line,Settings.TeamColors[Team]);
+        UI.RightText(C,Place,X,Y+Line,W,Line,Settings.TeamColors[Team]);
+        Rows[Team]++;
+    }
 }
 
 simulated function Destroyed()
@@ -825,8 +1034,26 @@ simulated function Destroyed()
 
 defaultproperties
 {
+    bDoKeybind=True
+    bExtraMsg=True
+    bRestorePlayerStats=True
+    LogoTexture=""
+    IntroSound="SmartCTF_4K.Start"
+    Position="left:15px,top:30%"
+    Size="byself:1"
+    LogoDrawTime=10
+    LogoDrawDelay=2
+    LogoFadeInTime=1
+    LogoFadeOutTime=1
+    CaptionLineOne=""
+    CaptionLineTwo=""
+    CaptionLineThree=""
+    CaptionLineFour=""
+    IntroSoundDelay=2
+    bLogoTranslucent=True
+
+
     bXmasSB=True
-    bXmasImages=True
     bXmasStart="01.12."
     bXmasEnd="06.01."
     bShowCountryFlags=True

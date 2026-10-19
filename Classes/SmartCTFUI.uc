@@ -1,10 +1,8 @@
 class SmartCTFUI extends Info;
 
-#exec TEXTURE IMPORT NAME=Solid FILE=Textures\Solid.pcx MIPS=OFF
 #exec TEXTURE IMPORT NAME=shade FILE=Textures\shade.pcx MIPS=OFF
 #exec TEXTURE IMPORT NAME=meter FILE=Textures\meter.pcx MIPS=OFF
 #exec TEXTURE IMPORT NAME=faceless FILE=Textures\faceless.pcx MIPS=OFF
-#exec TEXTURE IMPORT NAME=powered FILE=Textures\powered.pcx MIPS=OFF
 #exec TEXTURE IMPORT NAME=poweredModern FILE=Textures\powered-modern.pcx MIPS=OFF
 #exec TEXTURE IMPORT NAME=redskin2 FILE=Textures\redskin2.png MIPS=OFF
 #exec TEXTURE IMPORT NAME=blueskin2 FILE=Textures\blueskin2.png MIPS=OFF
@@ -20,6 +18,7 @@ var FontInfo LegacyFonts;
 var Font BodyFont, NameFont, StatFont, TitleFont, TinyFont, CaptureFont;
 var float BodyHeight, NameHeight, StatHeight, TitleHeight, TinyHeight;
 var float LastBarX, LastBarWidth, LastTextWidth;
+var float BarLabelWidth, BarDigitsWidth;
 
 var Font OldFont;
 var color OldColor;
@@ -64,23 +63,11 @@ simulated function Finish(Canvas C)
     C.CurX=OldX; C.CurY=OldY; C.SpaceX=OldSpaceX; C.SpaceY=OldSpaceY;
 }
 
-simulated function Box(Canvas C, float X, float Y, float W, float H, color Col)
-{
-    if (W<=0 || H<=0) return;
-    C.Style=1; C.DrawColor=Col; C.SetPos(X,Y);
-    C.DrawTile(texture'Solid',W,H,0,0,1,1);
-}
-
 simulated function Panel(Canvas C,float X,float Y,float W,float H)
 {
     C.Style=4; C.DrawColor.R=255; C.DrawColor.G=255; C.DrawColor.B=255;
     C.SetPos(X,Y);
     C.DrawTile(texture'shade',W,H,0,0,texture'shade'.USize,texture'shade'.VSize);
-    if (Settings!=None && Settings.bTintPanels)
-    {
-        C.Style=3; C.DrawColor=Settings.BackgroundColor;
-        C.SetPos(X,Y); C.DrawTile(texture'Solid',W,H,0,0,1,1);
-    }
     C.Style=1;
 }
 
@@ -145,14 +132,13 @@ simulated function texture TeamIcon(int Team)
 
 simulated function Bar(Canvas C,string Label,int Count,int Maximum,float X,float Y,float W,float H,color Col)
 {
-    local float LabelWidth,NumberWidth,DigitsWidth,YL,Gap,ValueRight,Available;
+    local float NumberWidth,YL,Gap,ValueRight,Available;
     local string NumberText;
     Gap=FMax(3,5*Scale); C.Font=StatFont;
     NumberText=string(Count);
-    C.StrLen(Label$":",LabelWidth,YL); C.StrLen(NumberText,NumberWidth,YL);
-    C.StrLen("00000",DigitsWidth,YL);
-    // Every statistic reserves a five-digit column; larger values expand safely.
-    ValueRight=FMin(W,FMax(60*Scale,LabelWidth)+Gap+FMax(DigitsWidth,NumberWidth));
+    C.StrLen(NumberText,NumberWidth,YL);
+    // Shared across every row and both rotating statistic pages.
+    ValueRight=FMin(W,BarLabelWidth+Gap+BarDigitsWidth);
     Text(C,Label$":",X,Y,FMax(0,ValueRight-NumberWidth-Gap),H,Settings.TextColor,StatFont);
     Text(C,NumberText,X+ValueRight-NumberWidth,Y,NumberWidth+1,H,Settings.TextColor,StatFont);
     Available=FMax(0,W-ValueRight-Gap);
@@ -195,6 +181,20 @@ simulated function Text(Canvas C, string S, float X, float Y, float W, float H, 
     C.DrawText(S,False); LastTextWidth=XL;
 }
 
+simulated function RightText(Canvas C,string S,float X,float Y,float W,float H,color Col)
+{
+    local float XL,YL;
+    local string Full;
+    C.Font=StatFont; C.StrLen(S,XL,YL);
+    Full=S;
+    while (XL>W && Len(Full)>0)
+    {
+        Full=Left(Full,Len(Full)-1); S=Full$".."; C.StrLen(S,XL,YL);
+    }
+    if (XL>W || W<=0) return;
+    Text(C,S,X+W-XL,Y,W,H,Col,StatFont);
+}
+
 simulated function Image(Canvas C, texture T, float X, float Y, float W, float H, optional bool bTranslucent, optional bool bDim)
 {
     local float F, DW,DH;
@@ -207,14 +207,6 @@ simulated function Image(Canvas C, texture T, float X, float Y, float W, float H
     C.SetPos(X+(W-DW)*0.5,Y+(H-DH)*0.5);
     C.DrawTile(T,DW,DH,0,0,T.USize,T.VSize);
     C.Style=1;
-}
-
-static function string AssetPath(string PackageName,string ObjectName)
-{
-    if (ObjectName=="") return "";
-    if (InStr(ObjectName,".")>=0) return ObjectName;
-    if (PackageName!="") return PackageName$"."$ObjectName;
-    return "Botpack."$ObjectName;
 }
 
 simulated function color Accent()

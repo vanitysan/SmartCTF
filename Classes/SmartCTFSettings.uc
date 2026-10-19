@@ -1,31 +1,39 @@
 class SmartCTFSettings extends ReplicationInfo;
 
-var bool bXmasSB, bXmasImages;
+var bool bDoKeybind, bExtraMsg;
+var string LogoTexture, IntroSound;
+var float LogoDrawDelay, LogoFadeInTime, LogoFadeOutTime, IntroSoundDelay;
+var string CaptionLineOne, CaptionLineTwo, CaptionLineThree, CaptionLineFour;
+var bool bLogoTranslucent;
+var float LogoDrawTime;
+var string Position, Size;
+
+var bool bXmasSB;
 var string bXmasStart, bXmasEnd;
 var bool bShowCountryFlags;
 var string CountryFlagsPackage;
 var bool bDrawFaces, bShowSpectators, bShowCarrierLocation;
-var bool bShowDamage, bShowRecords, bTintPanels;
+var bool bShowDamage, bShowRecords;
 var string RedFlag, BlueFlag, GreenFlag, YellowFlag, RedTeamHud, BlueTeamHud, GreenTeamHud, YellowTeamHud;
 var float UIScale, PanelWidth, PanelHeight, PageSeconds;
-var int TeamCount;
-var color BackgroundColor, TextColor, AccentColor, TeamColors[4];
-var string CustomInfo[8], StatLabels[16];
-var byte StatEnabled[16];
+var color TextColor, AccentColor, TeamColors[4];
+var string StatLabels[17];
+var byte StatEnabled[17];
 var byte ActiveTeams;
 var bool bXmasActive, bFestiveSnow;
 var SmartCTFMessageProfile Profiles[3];
-var int SettingsRevision;
 
 replication
 {
     reliable if (Role == ROLE_Authority)
-        bShowCountryFlags, CountryFlagsPackage, bXmasActive, bXmasImages, bFestiveSnow, bDrawFaces, bShowSpectators, bShowCarrierLocation,
-        bShowDamage, bShowRecords, bTintPanels, RedFlag, BlueFlag, GreenFlag, YellowFlag, RedTeamHud, BlueTeamHud, GreenTeamHud, YellowTeamHud,
+        LogoDrawDelay,LogoFadeInTime,LogoFadeOutTime,CaptionLineOne,CaptionLineTwo,CaptionLineThree,CaptionLineFour,IntroSoundDelay,bLogoTranslucent,
+        bDoKeybind,bExtraMsg,LogoTexture,IntroSound,Position,Size,LogoDrawTime,
+        bShowCountryFlags, CountryFlagsPackage, bXmasActive, bFestiveSnow, bDrawFaces, bShowSpectators, bShowCarrierLocation,
+        bShowDamage, bShowRecords, RedFlag, BlueFlag, GreenFlag, YellowFlag, RedTeamHud, BlueTeamHud, GreenTeamHud, YellowTeamHud,
         PageSeconds,
-         BackgroundColor, TextColor, AccentColor,
-        TeamColors, CustomInfo, StatLabels, StatEnabled, ActiveTeams,
-        Profiles, SettingsRevision;
+         TextColor, AccentColor,
+        TeamColors, StatLabels, StatEnabled, ActiveTeams,
+        Profiles;
 }
 
 simulated function string FlagSkinName(byte Team)
@@ -81,17 +89,38 @@ static function string Pad(int N)
 
 function ValidateSettings()
 {
+    LogoDrawTime=FClamp(LogoDrawTime,0,120);
+    LogoDrawDelay=FClamp(LogoDrawDelay,0,120);
+    LogoFadeInTime=FClamp(LogoFadeInTime,0,120);
+    LogoFadeOutTime=FClamp(LogoFadeOutTime,0,120);
+    IntroSoundDelay=FClamp(IntroSoundDelay,0,120);
+
     PageSeconds = FClamp(PageSeconds,3,60);
-    if (TeamCount != 0 && TeamCount != 2 && TeamCount != 4) TeamCount = 0;
     if (DateKey(bXmasStart)==0 || DateKey(bXmasEnd)==0) Log("Invalid Christmas period; overlay disabled.",'SmartCTF');
-    SettingsRevision++;
     UpdateChristmas();
 }
 
 function LoadSettings(SmartCTF C)
 {
     if (C==None) return;
-    bXmasSB=C.bXmasSB; bXmasImages=C.bXmasImages;
+    bDoKeybind=C.bDoKeybind;
+    bExtraMsg=C.bExtraMsg;
+    LogoTexture=C.LogoTexture;
+    IntroSound=C.IntroSound;
+    Position=C.Position;
+    Size=C.Size;
+    LogoDrawTime=C.LogoDrawTime;
+    LogoDrawDelay=C.LogoDrawDelay;
+    LogoFadeInTime=C.LogoFadeInTime;
+    LogoFadeOutTime=C.LogoFadeOutTime;
+    CaptionLineOne=C.CaptionLineOne;
+    CaptionLineTwo=C.CaptionLineTwo;
+    CaptionLineThree=C.CaptionLineThree;
+    CaptionLineFour=C.CaptionLineFour;
+    IntroSoundDelay=C.IntroSoundDelay;
+    bLogoTranslucent=C.bLogoTranslucent;
+
+    bXmasSB=C.bXmasSB;
     bXmasStart=C.bXmasStart; bXmasEnd=C.bXmasEnd;
     bShowCountryFlags=C.bShowCountryFlags;
     CountryFlagsPackage=C.CountryFlagsPackage;
@@ -114,7 +143,6 @@ function LoadSettings(SmartCTF C)
 defaultproperties
 {
     bXmasSB=True
-    bXmasImages=True
     bXmasStart="01.12."
     bXmasEnd="06.01."
     bAlwaysRelevant=True
@@ -130,7 +158,6 @@ defaultproperties
     PanelHeight=0.90
     PageSeconds=7
     ActiveTeams=2
-    BackgroundColor=(R=12,G=18,B=28)
     TextColor=(R=255,G=255,B=255)
     AccentColor=(R=9,G=151,B=247)
     TeamColors(0)=(R=255,G=0,B=0)
@@ -153,6 +180,7 @@ defaultproperties
     StatLabels(13)="Shield belts"
     StatLabels(14)="Damage amps"
     StatLabels(15)="Best spree"
+    StatLabels(16)="Deaths"
     StatEnabled(0)=1
     StatEnabled(1)=1
     StatEnabled(2)=1
@@ -169,4 +197,5 @@ defaultproperties
     StatEnabled(13)=1
     StatEnabled(14)=1
     StatEnabled(15)=1
+    StatEnabled(16)=1
 }
