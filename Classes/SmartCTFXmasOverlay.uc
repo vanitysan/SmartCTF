@@ -77,8 +77,7 @@ simulated function renderSnow(Canvas c) {
 		c.drawTile(sprite, particles[index].size*DrawScale, particles[index].size*DrawScale, 0, 0, sprite.uSize, sprite.vSize);
 	}
 	
-	if (Settings.bXmasImages) // whether to display the Sexy Xmas images! :D
-	{
+	// Santa and presents are part of the active Christmas scoreboard.
     // Draw Santa
 	  baseX = c.clipX - (santaTextureWidth+16)*DrawScale;
 	  baseY = c.clipY - (santaTextureHeight+16)*DrawScale;
@@ -98,7 +97,6 @@ simulated function renderSnow(Canvas c) {
   
 	  c.setPos(baseX, baseY);
 	  c.drawTile(Texture'present', presentTextureWidth*DrawScale, presentTextureHeight*DrawScale, 0.0, 0.0, presentTextureWidth, presentTextureHeight);
-  }
 }
 
 simulated function updateSnow(Canvas c) {

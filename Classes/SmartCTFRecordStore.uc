@@ -1,4 +1,4 @@
-class SmartCTFRecordStore extends Object config(SmartCTF_4K_Records);
+class SmartCTFRecordStore extends Object config(SmartCTF_Records);
 
 var config string RecordPlayer[16], RecordMap[16], RecordDate[16];
 var config int RecordValue[16];

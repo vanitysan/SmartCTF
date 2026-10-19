@@ -29,7 +29,7 @@ class SmartCTF extends Mutator config(SmartCTF_4K);
 
 #exec AUDIO IMPORT FILE="Sounds\start.wav" NAME="Start"
 
-var config bool bXmasSB, bXmasImages;
+var config bool bXmasSB;
 var config string bXmasStart, bXmasEnd;
 var config bool bPlayCaptureSound, bPlayAssistSound, bPlaySavedSound, bPlayLeadSound;
 var config bool bShowLongRangeMsg, bShowSpawnKillerGlobalMsg;
@@ -1059,7 +1059,6 @@ defaultproperties
 
 
     bXmasSB=True
-    bXmasImages=True
     bXmasStart="01.12."
     bXmasEnd="06.01."
     bShowCountryFlags=True

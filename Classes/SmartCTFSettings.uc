@@ -8,7 +8,7 @@ var bool bLogoTranslucent;
 var float LogoDrawTime;
 var string Position, Size;
 
-var bool bXmasSB, bXmasImages;
+var bool bXmasSB;
 var string bXmasStart, bXmasEnd;
 var bool bShowCountryFlags;
 var string CountryFlagsPackage;
@@ -28,7 +28,7 @@ replication
     reliable if (Role == ROLE_Authority)
         LogoDrawDelay,LogoFadeInTime,LogoFadeOutTime,CaptionLineOne,CaptionLineTwo,CaptionLineThree,CaptionLineFour,IntroSoundDelay,bLogoTranslucent,
         bDoKeybind,bExtraMsg,LogoTexture,IntroSound,Position,Size,LogoDrawTime,
-        bShowCountryFlags, CountryFlagsPackage, bXmasActive, bXmasImages, bFestiveSnow, bDrawFaces, bShowSpectators, bShowCarrierLocation,
+        bShowCountryFlags, CountryFlagsPackage, bXmasActive, bFestiveSnow, bDrawFaces, bShowSpectators, bShowCarrierLocation,
         bShowDamage, bShowRecords, RedFlag, BlueFlag, GreenFlag, YellowFlag, RedTeamHud, BlueTeamHud, GreenTeamHud, YellowTeamHud,
         PageSeconds,
          TextColor, AccentColor,
@@ -120,7 +120,7 @@ function LoadSettings(SmartCTF C)
     IntroSoundDelay=C.IntroSoundDelay;
     bLogoTranslucent=C.bLogoTranslucent;
 
-    bXmasSB=C.bXmasSB; bXmasImages=C.bXmasImages;
+    bXmasSB=C.bXmasSB;
     bXmasStart=C.bXmasStart; bXmasEnd=C.bXmasEnd;
     bShowCountryFlags=C.bShowCountryFlags;
     CountryFlagsPackage=C.CountryFlagsPackage;
@@ -143,7 +143,6 @@ function LoadSettings(SmartCTF C)
 defaultproperties
 {
     bXmasSB=True
-    bXmasImages=True
     bXmasStart="01.12."
     bXmasEnd="06.01."
     bAlwaysRelevant=True

@@ -1,4 +1,4 @@
-class SmartCTFEndStats extends Object config(SmartCTF_4K_Records);
+class SmartCTFEndStats extends Object config(SmartCTF_Records);
 struct RecordEntry
 {
     var int Count;

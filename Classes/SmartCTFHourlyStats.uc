@@ -1,1 +1,1 @@
-class SmartCTFHourlyStats extends SmartCTFEndStats config(SmartCTF_4K_Records);
+class SmartCTFHourlyStats extends SmartCTFEndStats config(SmartCTF_Records);
