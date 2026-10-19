@@ -1,28 +1,13 @@
 class SmartCTFXmasOverlay extends Info;
 var SmartCTFSettings Settings;
+#exec texture import name=SmoothSnow file="Textures\SmoothSnow.pcx" mips=on flags=0
 var float LastWidth,LastHeight;
 
-#exec texture import name=snowFlake1 file="Textures\SnowFlake1.pcx" mips=off flags=2
-#exec texture import name=snowFlake2 file="Textures\SnowFlake2.pcx" mips=off flags=2
-#exec texture import name=snowFlake3 file="Textures\SnowFlake3.pcx" mips=off flags=2
-#exec texture import name=snowFlake4 file="Textures\SnowFlake4.pcx" mips=off flags=2
-#exec texture import name=snowFlake5 file="Textures\SnowFlake5.pcx" mips=off flags=2
-#exec texture import name=snowFlake6 file="Textures\SnowFlake6.pcx" mips=off flags=2
-#exec texture import name=snowFlake7 file="Textures\SnowFlake7.pcx" mips=off flags=2
-#exec texture import name=snowFlake8 file="Textures\SnowFlake8.pcx" mips=off flags=2
-#exec texture import name=snowFlake9 file="Textures\SnowFlake9.pcx" mips=off flags=2
-#exec texture import name=snowFlake10 file="Textures\SnowFlake10.pcx" mips=off flags=2
-#exec texture import name=snowFlake11 file="Textures\SnowFlake11.pcx" mips=off flags=2
-#exec texture import name=snowFlake12 file="Textures\SnowFlake12.pcx" mips=off flags=2
-#exec texture import name=snowFlake13 file="Textures\SnowFlake13.pcx" mips=off flags=2
-#exec texture import name=snowFlake14 file="Textures\SnowFlake14.pcx" mips=off flags=2
-#exec texture import name=snowFlake15 file="Textures\SnowFlake15.pcx" mips=off flags=2
-#exec texture import name=snowFlake16 file="Textures\SnowFlake16.pcx" mips=off flags=2
 #exec texture import name=santa file="Textures\santa.pcx" mips=off flags=2
 #exec texture import name=present file="Textures\present.pcx" mips=off flags=2
 
 struct ParticleInfo {                   // Snow particle description struct.
-	var int spriteNum;                  // The snow flake sprite to use.
+	var float size;
 	var float cx;                       // Horizontal offset.
 	var float cy;                       // Vertical offset.
 	var float ct;                       // Time offset.
@@ -35,7 +20,7 @@ struct ParticleInfo {                   // Snow particle description struct.
 
 var color baseColor;                    // Base color of the snow flakes.
 var bool bSnowInitialized;              // Whether the particles have been initialized.
-var Texture sprites[16];                // Snow flake sprites.
+
 var ParticleInfo particles[100];        // Current particles displayed.
 var float lastUpdateTime;               // Last time the particles were rendered.
 
@@ -55,16 +40,12 @@ const maxGlow = 1.00;                   // Maximum snow flake sprite glow.
 // Scaled constants (set for a resolution of 1280x1024 px).
 const scaleMinDX = -20.0;
 const scaleMaxDX = 20.0;
-const scaleMinDY = 100.0;
-const scaleMaxDY = 300.0;
+const scaleMinDY = 25.0;
+const scaleMaxDY = 85.0;
 const scaleMinWaveAmplitude = 8;
 const scaleMaxWaveAmplitude = 22;
 const scaleWidth = 1280;
 const scaleHeight = 1024;
-
-// Texture constante
-// const lightsTextureWidth = 32;           // Width of the lights texture.
-// const lightsTextureHeight = 256;        // Height of the lights texture.
 
 const santaTextureWidth = 128;             // Width of the santa texture.
 const santaTextureHeight = 128;           // Height of the santa texture.
@@ -72,40 +53,6 @@ const santaTextureHeight = 128;           // Height of the santa texture.
 const presentTextureWidth = 128;           // Width of the present texture.
 const presentTextureHeight = 128;         // Height of the present texture.
 
-
-
-/***************************************************************************************************
- *
- *  $DESCRIPTION  Renders the scoreboard.
- *  $PARAM        c  The canvas on which the rendering should be performed.
- *  $REQUIRE      c != none
- *  $OVERRIDE
- *
- **************************************************************************************************/
-
-
-
-
-/***************************************************************************************************
- *
- *  $DESCRIPTION  Renders the scoreboard in small scale?
- *  $PARAM        c  The canvas on which the rendering should be performed.
- *  $REQUIRE      c != none
- *  $OVERRIDE
- *
- **************************************************************************************************/
-
-
-
-
-/***************************************************************************************************
- *
- *  $DESCRIPTION  Renders the snow particles. Also adds the XmasImages.
- *  $PARAM        c  The canvas on which the rendering should be performed.
- *  $REQUIRE      c != none
- *  $OVERRIDE
- *
- **************************************************************************************************/
 simulated function renderSnow(Canvas c) {
 	local int baseX, baseY;
 	local int index;
@@ -126,8 +73,8 @@ simulated function renderSnow(Canvas c) {
 
 		// Draw particle sprite.
 		c.drawColor = particles[index].col;
-		sprite = sprites[particles[index].spriteNum];
-		c.drawTile(sprite, sprite.uSize*DrawScale, sprite.vSize*DrawScale, 0, 0, sprite.uSize, sprite.vSize);
+		sprite = Texture'SmoothSnow';
+		c.drawTile(sprite, particles[index].size*DrawScale, particles[index].size*DrawScale, 0, 0, sprite.uSize, sprite.vSize);
 	}
 	
 	if (Settings.bXmasImages) // whether to display the Sexy Xmas images! :D
@@ -154,15 +101,6 @@ simulated function renderSnow(Canvas c) {
   }
 }
 
-
-/***************************************************************************************************
- *
- *  $DESCRIPTION  Updates the positions of the snow particles.
- *  $PARAM        c  The canvas on which the rendering should be performed.
- *  $REQUIRE      c != none
- *  $OVERRIDE
- *
- **************************************************************************************************/
 simulated function updateSnow(Canvas c) {
 	local float deltaTime;
 	local int index;
@@ -190,17 +128,6 @@ simulated function updateSnow(Canvas c) {
 	lastUpdateTime = level.timeSeconds;
 }
 
-
-
-/***************************************************************************************************
- *
- *  $DESCRIPTION  Initializes all snow particles.
- *  $PARAM        c  The canvas on which the rendering should be performed.
- *  $REQUIRE      c != none
- *  $ENSURE       bSnowInitialized
- *  $OVERRIDE
- *
- **************************************************************************************************/
 simulated function initializeSnow(Canvas c) {
 	local int index;
 	bSnowInitialized = true;
@@ -212,23 +139,11 @@ simulated function initializeSnow(Canvas c) {
 	lastUpdateTime = level.timeSeconds;
 }
 
-
-
-/***************************************************************************************************
- *
- *  $DESCRIPTION  Initializes the specified particle.
- *  $PARAM        index   The particle that is to be initialized.
- *  $PARAM        c       The canvas on which the rendering should be performed.
- *  $PARAM        bReset  Reset particle to the top of the screen.
- *  $REQUIRE      0 <= index && index <= arrayCount(particles) && c != none
- *  $OVERRIDE
- *
- **************************************************************************************************/
 simulated function initializeParticle(int index, Canvas c, optional bool bReset) {
-	particles[index].spriteNum = rand(arrayCount(sprites));
+    particles[index].size = 10 + fRand()*30;
 	particles[index].cx = fRand() * c.clipX;
 	if (bReset) {
-		particles[index].cy = -sprites[particles[index].spriteNum].vSize;
+		particles[index].cy = -Texture'SmoothSnow'.VSize;
 	} else {
 		particles[index].cy = fRand() * c.clipY;
 	}
@@ -249,16 +164,6 @@ simulated function initializeParticle(int index, Canvas c, optional bool bReset)
 	}
 }
 
-
-
-/***************************************************************************************************
- *
- *  $DESCRIPTION  Computes the absolute values of the scaled settings.
- *  $PARAM        c  The canvas on which the rendering should be performed.
- *  $REQUIRE      c != none
- *  $OVERRIDE
- *
- **************************************************************************************************/
 simulated function setupScalars(Canvas c) {
     DrawScale=fMin(c.ClipX/1280.0,c.ClipY/1024.0);
 	minDX = scaleMinDX / scaleWidth * c.clipX;
@@ -269,33 +174,9 @@ simulated function setupScalars(Canvas c) {
 	maxWaveAmplitude = scaleMaxWaveAmplitude / scaleWidth * c.clipX;
 }
 
-
-
-/***************************************************************************************************
- *
- *  $DESCRIPTION  Default properties block.
- *
- **************************************************************************************************/
-
 defaultproperties
 {
     RemoteRole=ROLE_None
     bHidden=True
 	BaseColor=(R=255,G=255,B=255)
-	sprites(0)=Texture'snowFlake1'
-	sprites(1)=Texture'snowFlake2'
-	sprites(2)=Texture'snowFlake3'
-	sprites(3)=Texture'snowFlake4'
-	sprites(4)=Texture'snowFlake5'
-	sprites(5)=Texture'snowFlake6'
-	sprites(6)=Texture'snowFlake7'
-	sprites(7)=Texture'snowFlake8'
-	sprites(8)=Texture'snowFlake9'
-	sprites(9)=Texture'snowFlake10'
-	sprites(10)=Texture'snowFlake11'
-	sprites(11)=Texture'snowFlake12'
-	sprites(12)=Texture'snowFlake13'
-	sprites(13)=Texture'snowFlake14'
-	sprites(14)=Texture'snowFlake15'
-	sprites(15)=Texture'snowFlake16'
 }

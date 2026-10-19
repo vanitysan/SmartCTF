@@ -1,4 +1,4 @@
-class SmartCTFSpreeConfig extends SmartCTFProfileConfig config(SmartCTF_4J);
+class SmartCTFSpreeConfig extends SmartCTFProfileConfig config(SmartCTF_4K);
 
 #exec AUDIO IMPORT FILE="Sounds\holyshit.wav" NAME="Holyshit"
 
@@ -33,7 +33,7 @@ defaultproperties
     SoundNames(3)="Announcer.unstoppable"
     SoundNames(4)="Announcer.godlike"
     SoundNames(5)="Botpack.SpreeSound"
-    SoundNames(6)="SmartCTF_4J.Holyshit"
+    SoundNames(6)="SmartCTF_4K.Holyshit"
     bEnabled=True
     bAnimateColor=True
     SecondColor=(R=255,G=100,B=40)

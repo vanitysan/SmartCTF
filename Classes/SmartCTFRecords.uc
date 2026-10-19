@@ -1,7 +1,7 @@
 class SmartCTFRecords extends ReplicationInfo;
 
-var string RecordPlayer[16], RecordMap[16], RecordDate[16];
-var int RecordValue[16];
+var string RecordPlayer[17], RecordMap[17], RecordDate[17];
+var int RecordValue[17];
 var bool bRecordsPerHour;
 var bool bCommitted;
 
@@ -28,7 +28,7 @@ function UpdateRecords(SmartCTFSettings Settings,int ActiveSeconds)
     {
         if (S.PlayerInfo == None || class'SmartCTFScoreBoard'.static.IsRealSpectator(S.PlayerInfo)) continue;
         Seconds = Max(1,ActiveSeconds-S.SessionStart);
-        for (I=0; I<16; I++)
+        for (I=0; I<17; I++)
         {
             N = S.Value(I);
             // Best spree is a run length, not an hourly rate.
@@ -53,12 +53,12 @@ function LoadSettings()
     bRecordsPerHour=class'SmartCTF'.default.bRecordsPerHour;
     if (bRecordsPerHour) Store=new(None) class'SmartCTFHourlyStats';
     else Store=new(None) class'SmartCTFEndStats';
-    for (I=0; I<16; I++)
+    for (I=0; I<17; I++)
     {
         RecordValue[I]=Store.GetCount(I); RecordPlayer[I]=Store.GetPlayerName(I);
         RecordMap[I]=Store.GetMapName(I); RecordDate[I]=Store.GetRecordDate(I);
         // Import once into the bank matching the legacy mode; never overwrite named entries.
-        if (!Store.bInitialized && bRecordsPerHour==Legacy.bRecordsPerHour && RecordValue[I]==0 && RecordPlayer[I]=="")
+        if (I<ArrayCount(Legacy.RecordValue) && !Store.bInitialized && bRecordsPerHour==Legacy.bRecordsPerHour && RecordValue[I]==0 && RecordPlayer[I]=="")
         {
             RecordValue[I]=Legacy.RecordValue[I]; RecordPlayer[I]=Legacy.RecordPlayer[I];
             RecordMap[I]=Legacy.RecordMap[I]; RecordDate[I]=Legacy.RecordDate[I];
@@ -80,7 +80,7 @@ function SaveRecords()
     { Store=new(None) class'SmartCTFHourlyStats'; Other=new(None) class'SmartCTFEndStats'; }
     else
     { Store=new(None) class'SmartCTFEndStats'; Other=new(None) class'SmartCTFHourlyStats'; }
-    for (I=0; I<16; I++)
+    for (I=0; I<17; I++)
     {
         Store.SetRecord(I,RecordValue[I],RecordPlayer[I],RecordMap[I],RecordDate[I]);
     }

@@ -1,4 +1,4 @@
-class SmartCTFMultiConfig extends SmartCTFProfileConfig config(SmartCTF_4J);
+class SmartCTFMultiConfig extends SmartCTFProfileConfig config(SmartCTF_4K);
 
 var config string Texts[6], SoundNames[6];
 

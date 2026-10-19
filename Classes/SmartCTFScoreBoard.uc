@@ -3,7 +3,7 @@ class SmartCTFScoreBoard extends ScoreBoard;
 var SmartCTF Controller;
 var PlayerReplicationInfo Players[64];
 var int Counts[4], PlayerCount;
-var int Maximum[16];
+var int Maximum[17];
 
 static function bool IsRealSpectator(PlayerReplicationInfo PRI)
 {
@@ -47,11 +47,11 @@ function Gather()
         Players[J+1]=Temp;
     }
     for (I=PlayerCount; I<64; I++) Players[I]=None;
-    for (K=0; K<16; K++) Maximum[K]=0;
+    for (K=0; K<17; K++) Maximum[K]=0;
     for (I=0; I<PlayerCount; I++)
     {
         ST=Controller.Stats(Players[I]);
-        if (ST!=None) for (K=0; K<16; K++) Maximum[K]=Max(Maximum[K],ST.Value(K));
+        if (ST!=None) for (K=0; K<17; K++) Maximum[K]=Max(Maximum[K],ST.Value(K));
     }
 }
 
@@ -60,7 +60,7 @@ function ShowScores(Canvas C)
     local SmartCTFUI U;
     local SmartCTFSettings S;
     local int I,Rows;
-    local float X,Y,W,H,Gap,FootH,TeamH,Line;
+    local float X,Y,W,H,Gap,FootH,TeamH,Line,XL,YL;
     local string Clock,Specs;
     local GameReplicationInfo G;
     local color FooterColor;
@@ -70,8 +70,20 @@ function ShowScores(Canvas C)
     U=Controller.UI; S=Controller.Settings; G=PlayerPawn(Owner).GameReplicationInfo;
     if (G==None) return;
     Gather(); U.Begin(C);
+    C.Font=U.StatFont;
+    U.BarLabelWidth=60*U.Scale;
+    C.StrLen("00000",U.BarDigitsWidth,YL);
+    for (I=2; I<=16; I++)
+        if (I!=10 && (I<=11 || I==16))
+        {
+            C.StrLen(StatLabel(I,S)$":",XL,YL);
+            U.BarLabelWidth=FMax(U.BarLabelWidth,XL);
+            C.StrLen(string(Maximum[I]),XL,YL);
+            U.BarDigitsWidth=FMax(U.BarDigitsWidth,XL);
+        }
     W=C.ClipX*S.PanelWidth; H=C.ClipY*S.PanelHeight;
     X=(C.ClipX-W)*0.5; Y=C.ClipY*0.104;
+    if (S.ActiveTeams==4) Y=C.ClipY*0.06;
     Line=U.StatHeight; Gap=C.ClipX*0.13; FootH=Line*5;
     if (G.RemainingTime>0) Clock="Remaining Time: "$(G.RemainingTime/60)$":"$S.Pad(G.RemainingTime%60);
     else Clock="Elapsed Time: "$(G.ElapsedTime/60)$":"$S.Pad(G.ElapsedTime%60);
@@ -88,7 +100,7 @@ function ShowScores(Canvas C)
         U.CenterText(C,"Spectators: " $ Specs,0,Y,C.ClipX,Line,S.TextColor);
     }
     FooterColor.R=255; FooterColor.G=255;
-    U.CenterText(C,"[ SmartCTF 4J | {PiN}Kev | {DnF2}SiNiSTeR | [es]Rush | adminthis & The_Cowboy & Sp0ngeb0b | vanitysan ]",0,Y+Line*1.4,C.ClipX,Line,FooterColor);
+    U.CenterText(C,"[ SmartCTF 4K | {PiN}Kev | {DnF2}SiNiSTeR | [es]Rush | adminthis & The_Cowboy & Sp0ngeb0b | vanitysan ]",0,Y+Line*1.4,C.ClipX,Line,FooterColor);
     U.CenterText(C,"Current Time: " $ ClientClock() @ " | " @ Clock,0,Y+Line*2.7,C.ClipX,Line,S.TextColor);
     U.CenterText(C,"Playing " $ Level.Title @ " on " @ G.ServerName,0,Y+Line*4,C.ClipX,Line,S.TextColor);
     U.ChristmasOverlay(C);
@@ -116,6 +128,12 @@ function TeamPanel(Canvas C,SmartCTFUI U,SmartCTFSettings S,int Team,float X,flo
     if (G!=None && G.Teams[Team]!=None) Score=int(G.Teams[Team].Score);
     Header=U.NameHeight+24*U.Scale;
     RowH=U.NameHeight+U.StatHeight*3+18*U.Scale;
+    if (S.ActiveTeams==4)
+    {
+        Pad=12*U.Scale;
+        Header=U.NameHeight+18*U.Scale;
+        RowH=U.NameHeight+U.StatHeight*3+10*U.Scale;
+    }
     PerPage=Max(1,int((H-Header-Pad-Line)/RowH));
     Pages=Max(1,(Counts[Team]+PerPage-1)/PerPage);
     Page=int(Level.TimeSeconds/S.PageSeconds)%Pages;
@@ -173,11 +191,16 @@ function TeamPanel(Canvas C,SmartCTFUI U,SmartCTFSettings S,int Team,float X,flo
         U.Text(C,NameText,NameX,RY,NameW,U.NameHeight,NameColor(Players[I],S),U.NameFont);
         MetaX=NameX+NameColumnW+Gap;
         Details="TM:"$Max(1,int((Level.TimeSeconds-Players[I].StartTime)/60));
-        U.Text(C,Details,MetaX,RY+(U.NameHeight-U.TinyHeight)*0.5,TimeW,U.TinyHeight,S.TextColor,U.TinyFont);
+        U.Text(C,Details,MetaX,RY+(U.NameHeight-U.TinyHeight*2)*0.5+U.TinyHeight,TimeW,U.TinyHeight,S.TextColor,U.TinyFont);
         if (ST!=None)
         {
             Details="EFF:"$int(100.0*ST.Frags/Max(1,ST.Frags+int(Players[I].Deaths)))$"%";
-            U.Text(C,Details,MetaX+TimeW,RY+(U.NameHeight-U.TinyHeight)*0.5,FMax(0,X+W-Pad-ScoreColumnW-Gap-MetaX-TimeW),U.TinyHeight,S.TextColor,U.TinyFont);
+            U.Text(C,Details,MetaX+TimeW,RY+(U.NameHeight-U.TinyHeight*2)*0.5+U.TinyHeight,FMax(0,X+W-Pad-ScoreColumnW-Gap-MetaX-TimeW),U.TinyHeight,S.TextColor,U.TinyFont);
+        }
+        if (ST!=None)
+        {
+            Details=PickupSummary(ST);
+            U.Text(C,Details,MetaX,RY+(U.NameHeight-U.TinyHeight*2)*0.5,FMax(0,X+W-Pad-ScoreColumnW-Gap-MetaX),U.TinyHeight,S.TextColor,U.TinyFont);
         }
         FlagShift=0;
         InfoGap=3*U.Scale;
@@ -209,7 +232,7 @@ function TeamPanel(Canvas C,SmartCTFUI U,SmartCTFSettings S,int Team,float X,flo
             Metric[0]=2; Metric[1]=4; Metric[2]=3;
             Metric[3]=7; Metric[4]=9; Metric[5]=6;
             if (int(Level.TimeSeconds/S.PageSeconds)%2==1)
-            { Metric[2]=5; if (S.bShowDamage) Metric[5]=11; }
+            { Metric[2]=5; Metric[3]=16; Metric[4]=8; if (S.bShowDamage) Metric[5]=11; }
             StatW=(X+W-Pad-NameX-Gap)/2;
             for (K=0; K<6; K++)
                 U.Bar(C,StatLabel(Metric[K],S),ST.Value(Metric[K]),Maximum[Metric[K]],NameX+(K/3)*(StatW+Gap),RY+U.NameHeight+(K%3)*U.StatHeight,StatW,U.StatHeight,Col);
@@ -217,6 +240,24 @@ function TeamPanel(Canvas C,SmartCTFUI U,SmartCTFSettings S,int Team,float X,flo
         Shown++;
     }
     if (Pages>1) U.Text(C,"Page "$(Page+1)$"/"$Pages,X+Pad,Y+Header+Pad+Shown*RowH,W-Pad*2,Line,Col);
+}
+
+static function string PickupSummary(SmartCTFPlayerReplicationInfo ST)
+{
+    local string Text;
+    if (ST==None) return "";
+    if (ST.HeadShots>0) Text="HS:"$ST.HeadShots;
+    if (ST.ShieldBelts>0)
+    {
+        if (Text!="") Text=Text$" ";
+        Text=Text$"SB:"$ST.ShieldBelts;
+    }
+    if (ST.Amps>0)
+    {
+        if (Text!="") Text=Text$" ";
+        Text=Text$"AMP:"$ST.Amps;
+    }
+    return Text;
 }
 
 function color NameColor(PlayerReplicationInfo PRI,SmartCTFSettings S)
@@ -236,7 +277,7 @@ function string StatLabel(int Index,SmartCTFSettings S)
         case 4:return "Grabs";
         case 6:return "FlagKls";
         case 9:return "DefKills";
-        case 11:return "Damage";
+        case 11:return "Dmg.";
     }
     return S.StatLabels[Index];
 }

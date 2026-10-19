@@ -1,9 +1,10 @@
 class SmartCTFPlayerReplicationInfo extends ReplicationInfo;
 
 var PlayerReplicationInfo PlayerInfo;
+var SmartCTFReconnectEntry ReconnectEntry;
 var int Captures, Assists, Grabs, Returns, FlagKills, Covers, Seals, DefKills;
-var int Frags, HeadShots, DamageDealt, DamageTaken, TeamKills, Suicides;
-var int ShieldBelts, Amps, BestSpree, SpawnKills;
+var int Frags, HeadShots, DamageDealt;
+var int ShieldBelts, Amps, BestSpree;
 var float CarrierSeconds, SpawnTime, LastKillTime;
 var int FragSpree, MultiLevel;
 var int CoverSpree,SealSpree,SpawnKillSpree;
@@ -22,8 +23,21 @@ replication
 {
     reliable if (Role == ROLE_Authority)
         CountryPrefix,PlayerInfo,Captures,Assists,Grabs,Returns,FlagKills,Covers,Seals,DefKills,
-        Frags,HeadShots,DamageDealt,DamageTaken,TeamKills,Suicides,ShieldBelts,Amps,
-        BestSpree,SpawnKills,CarrierSeconds,SessionStart,ClientNotice;
+        Frags,HeadShots,DamageDealt,ShieldBelts,Amps,
+        BestSpree,CarrierSeconds,SessionStart;
+    reliable if (Role==ROLE_Authority && bNetOwner)
+        ClientNotice;
+}
+
+function Destroyed()
+{
+    if (Role==ROLE_Authority && ReconnectEntry!=None)
+    {
+        ReconnectEntry.Capture();
+        ReconnectEntry.Player=None;
+        ReconnectEntry.Stats=None;
+    }
+    Super.Destroyed();
 }
 
 function Timer()
@@ -100,12 +114,13 @@ function PostBeginPlay()
     if (Role == ROLE_Authority) SetTimer(2,True);
 }
 
-simulated function ClientNotice(byte Category, int Index, string PlayerName, string VictimName, string WeaponName, int Count)
+simulated function ClientNotice(byte Category, int Index, string PlayerName, string VictimName, string WeaponName, int Count, bool OwnSound)
 {
     local SmartCTF S;
     foreach AllActors(class'SmartCTF',S)
     {
-        S.AddNotice(Category,Index,PlayerName,VictimName,WeaponName,Count);
+        if (S.LocalPlayer==None || S.LocalPlayer.PlayerReplicationInfo!=PlayerInfo) return;
+        S.AddNotice(Category,Index,PlayerName,VictimName,WeaponName,Count,OwnSound);
         break;
     }
 }
@@ -130,6 +145,7 @@ simulated function int Value(int I)
         case 13: return ShieldBelts;
         case 14: return Amps;
         case 15: return BestSpree;
+        case 16: if (PlayerInfo!=None) return int(PlayerInfo.Deaths); return 0;
     }
     return 0;
 }

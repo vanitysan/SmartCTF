@@ -3,9 +3,7 @@ class SmartCTFCoolMsg extends LocalMessagePlus;
 var(Messages) string LongRangeString;
 var(Messages) string UberLongRangeString;
 var(Messages) string SpawnLamerString;
-var(Messages) string OvertimeEnabledString;
-var(Messages) string OvertimeDisabledString;
-var Color EnabledColor, DisabledColor, SpawnLamerColor;
+var Color SpawnLamerColor;
 
 static function float GetOffset(int Switch, float YL, float ClipY )
 {
@@ -18,8 +16,6 @@ static function string GetString( optional int Switch, optional PlayerReplicatio
   {
     case 1: return default.LongRangeString;
     case 2: return default.UberLongRangeString;
-    case 3: return default.OvertimeEnabledString;
-    case 4: return default.OvertimeDisabledString;
     case 5: return default.SpawnLamerString;
   }
   return "";
@@ -31,8 +27,6 @@ static function Color GetColor( optional int Switch, optional PlayerReplicationI
   {
     case 1: return default.DrawColor;
     case 2: return default.DrawColor;
-    case 3: return default.EnabledColor;
-    case 4: return default.DisabledColor;
     case 5: return default.SpawnLamerColor;
   }
   return default.DrawColor;
@@ -43,10 +37,6 @@ defaultproperties
 	LongRangeString="Long Range Kill!"
 	UberLongRangeString="Uber Long Range Kill!"
 	SpawnLamerString="Spawnkill..."
-	OvertimeEnabledString="Sudden Death Overtime = Enabled"
-	OvertimeDisabledString="Sudden Death Overtime = DISABLED"
-	EnabledColor=(R=128,G=255,B=192)
-	DisabledColor=(R=255,G=192,B=128)
 	SpawnLamerColor=(R=255,G=64)
 	FontSize=1
 	bIsSpecial=True

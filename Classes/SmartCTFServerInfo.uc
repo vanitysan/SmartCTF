@@ -10,7 +10,7 @@ function RenderInfo(Canvas C)
     local GameReplicationInfo G;
     local TournamentGameReplicationInfo TG;
     local PlayerReplicationInfo PRI;
-    local int I,J,Enabled[16],Count,Rows,Page,Pages,Bots,Players,Value,CustomCount;
+    local int I,J,Enabled[17],Count,Rows,Page,Pages,Bots,Players,Value;
     local float X,Y,W,H,Line,Pad,LX,RX,CW,RY,Top,TableW,LabelW,NumberW,Gap,XL,YL,NumberRight,WhoX,WhereX,WhenX,Remaining;
     local string Title,Who,ValueText,MapText,DateText;
     if (Controller==None) foreach AllActors(class'SmartCTF',Controller) break;
@@ -21,11 +21,10 @@ function RenderInfo(Canvas C)
     U.Begin(C);
     W=C.ClipX*0.80*(S.PanelWidth/0.87)+48*U.Scale;
     Line=U.BodyHeight; Pad=24*U.Scale;
-    for (I=0; I<16; I++) if (S.StatEnabled[I]!=0) Enabled[Count++]=I;
-    for (I=0; I<8; I++) if (S.CustomInfo[I]!="") CustomCount++;
+    for (I=0; I<17; I++) if (S.StatEnabled[I]!=0) Enabled[Count++]=I;
     // Keep the classic compact centered window; only paginate rows that cannot fit.
-    Rows=Min(Min(8,Count),Max(1,int((C.ClipY*S.PanelHeight-Line*(22+Min(2,CustomCount)))/(Line*1.15))));
-    H=Line*(22+Min(2,CustomCount))+Rows*Line*1.15;
+    Rows=Min(Min(9,Count),Max(1,int((C.ClipY*S.PanelHeight-Line*22)/(Line*1.15))));
+    H=Line*22+Rows*Line*1.15;
     X=(C.ClipX-W)*0.5; Y=(C.ClipY-H)*0.5;
     LX=X+Pad; RX=X+W*0.62; CW=W*0.36-Pad;
     U.Panel(C,X,Y,W,H); U.InfoHeader(C,X,Y,W,U.TitleHeight*1.5);
@@ -58,16 +57,6 @@ function RenderInfo(Canvas C)
         InfoLine(C,U,S,"Flags Captured:",string(TG.TotalFlags),RX,RY,CW,Line);
     }
     Top+=Line*5.6;
-    // Optional custom lines occupy a small rotating area above the record table.
-    if (CustomCount>0)
-    {
-        J=0; Page=int(Level.TimeSeconds/S.PageSeconds)%Max(1,(CustomCount+1)/2);
-        for (I=0; I<8; I++) if (S.CustomInfo[I]!="")
-        {
-            if (J/2==Page) { U.Text(C,S.CustomInfo[I],LX,Top,W-Pad*2,Line,S.TextColor); Top+=Line; }
-            J++;
-        }
-    }
     Pages=Max(1,(Count+Rows-1)/Max(1,Rows)); Page=int(Level.TimeSeconds/S.PageSeconds)%Pages;
     Title="SmartCTF Record Holders";
     if (!S.bShowRecords) Title="SmartCTF Match Leaders";
@@ -151,3 +140,4 @@ defaultproperties
 {
     RemoteRole=ROLE_None
 }
+

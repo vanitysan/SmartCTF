@@ -1,11 +1,11 @@
-class SmartCTFEndStats extends Object config(SmartCTF_4J_Records);
+class SmartCTFEndStats extends Object config(SmartCTF_4K_Records);
 struct RecordEntry
 {
     var int Count;
     var string PlayerName, MapName, RecordDate;
 };
 var config bool bInitialized;
-var config RecordEntry MostPoints, MostFrags, MostCaps, MostAssists, MostGrabs, MostReturns, MostFlagKills, MostCovers, MostSeals, MostDefenseKills, MostHeadShots, MostDamage, MostCarrierSeconds, MostShieldBelts, MostDamageAmps, BestSpree;
+var config RecordEntry MostPoints, MostFrags, MostCaps, MostAssists, MostGrabs, MostReturns, MostFlagKills, MostCovers, MostSeals, MostDefenseKills, MostHeadShots, MostDamage, MostCarrierSeconds, MostShieldBelts, MostDamageAmps, BestSpree, MostDeaths;
 function int GetCount(int I)
 {
     switch (I)
@@ -26,6 +26,7 @@ function int GetCount(int I)
         case 13: return MostShieldBelts.Count;
         case 14: return MostDamageAmps.Count;
         case 15: return BestSpree.Count;
+        case 16: return MostDeaths.Count;
     }
     return 0;
 }
@@ -49,6 +50,7 @@ function string GetPlayerName(int I)
         case 13: return MostShieldBelts.PlayerName;
         case 14: return MostDamageAmps.PlayerName;
         case 15: return BestSpree.PlayerName;
+        case 16: return MostDeaths.PlayerName;
     }
     return "";
 }
@@ -72,6 +74,7 @@ function string GetMapName(int I)
         case 13: return MostShieldBelts.MapName;
         case 14: return MostDamageAmps.MapName;
         case 15: return BestSpree.MapName;
+        case 16: return MostDeaths.MapName;
     }
     return "";
 }
@@ -95,6 +98,7 @@ function string GetRecordDate(int I)
         case 13: return MostShieldBelts.RecordDate;
         case 14: return MostDamageAmps.RecordDate;
         case 15: return BestSpree.RecordDate;
+        case 16: return MostDeaths.RecordDate;
     }
     return "";
 }
@@ -120,5 +124,6 @@ function SetRecord(int I,int N,string Player,string Map,string Date)
         case 13: MostShieldBelts=E; break;
         case 14: MostDamageAmps=E; break;
         case 15: BestSpree=E; break;
+        case 16: MostDeaths=E; break;
     }
 }
